@@ -1,8 +1,9 @@
 outputs/
-*.jpg
-*.png
 *.pt
 *.bin
 __pycache__/
 *.pyc
 .env
+*.jpg
+*.png
+!samples/**

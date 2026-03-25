@@ -1,20 +1,20 @@
-# BIM Generation Pipeline v4
+# BIM Generation Pipeline v5
 
 Real construction photos → ControlNet → BIM-style renders
 
-## v4 Upgrades
+## Features
 
-- **Depth Anything V2** replaces MiDaS (AbsRel 0.074 vs 0.127)
-- **Multi-backend**: SD 1.5 / SDXL / Flux.1-dev selectable
-- **1024×1024** resolution with SDXL and Flux
-- **Backend-aware prompts** (Flux uses T5-XXL natural language)
+- **Depth Anything V2** (AbsRel 0.074 vs MiDaS 0.127)
+- **Multi-backend**: SD 1.5 / SDXL / Flux.1-dev
+- **Up to 1024×1024** resolution
+- **Backend-aware prompts**
 
-## Results (50 renders, sdxl + depth_v2)
+## Latest Run (50 renders, sdxl + depth_v2)
 
 | Metric | Value |
 |---|---|
 | Backend | sdxl |
-| Condition mode | depth_v2 |
+| Condition | depth_v2 |
 | Resolution | 1024×1024 |
 | Guidance | 10.0 |
 | CN scale | 0.8 |
@@ -23,6 +23,6 @@ Real construction photos → ControlNet → BIM-style renders
 ## Next Steps
 
 - [ ] YOLOv8 human removal from depth maps
-- [ ] Full 7K dataset generation (SDXL + Depth Anything V2)
-- [ ] A/B comparison: SD1.5 vs SDXL vs Flux renders
+- [ ] Full 7K dataset generation
+- [ ] A/B comparison across backends
 - [ ] VLM fine-tuning on paired data
