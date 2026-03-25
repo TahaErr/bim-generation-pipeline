@@ -1,3 +1,5 @@
+"""Backend-aware prompt factory for BIM generation."""
+
 VIEW_PROMPTS = {
     "elevation view":   "front elevation view",
     "plan view":        "top-down plan view",
@@ -12,20 +14,72 @@ DISTANCE_HINTS = {
     "far distance":   "wide-angle overview",
 }
 
-def build_prompt(sample: dict) -> tuple:
-    """Returns (positive, negative) prompt for a dataset sample."""
-    view     = VIEW_PROMPTS.get(sample.get("view", ""), "perspective view")
-    distance = DISTANCE_HINTS.get(sample.get("camera_distance", ""), "medium distance")
-    positive = (
-        f"BIM render, {view}, {distance}, "
+_NEG_SD15 = (
+    "(workers:2.0), (people:2.0), (humans:2.0), "
+    "(hard hat:1.5), (watermark:2.0), (text:2.0), "
+    "photorealistic, photo, dirt, vegetation, "
+    "shadows, blur, low quality"
+)
+_NEG_SDXL = (
+    "(workers:2.0), (people:2.0), (humans:2.0), (hard hat:1.5), "
+    "(watermark:2.0), (text:2.0), (logo:1.5), "
+    "photorealistic, photograph, real photo, "
+    "dirt, vegetation, grass, trees, "
+    "deep shadows, motion blur, low quality, jpeg artifacts, "
+    "noise, grain, oversaturated, overexposed"
+)
+
+def _prompt_sd15(sample):
+    view = VIEW_PROMPTS.get(sample.get("view", ""), "perspective view")
+    dist = DISTANCE_HINTS.get(sample.get("camera_distance", ""), "medium distance")
+    pos = (
+        f"BIM render, {view}, {dist}, "
         f"3D building model, flat colors, structural elements, "
         f"Revit style, no texture, technical CAD drawing, "
         f"concrete steel structure, clean background"
     )
-    negative = (
-        "(workers:2.0), (people:2.0), (humans:2.0), "
-        "(hard hat:1.5), (watermark:2.0), (text:2.0), "
-        "photorealistic, photo, dirt, vegetation, "
-        "shadows, blur, low quality"
+    return pos, _NEG_SD15
+
+def _prompt_sdxl(sample):
+    view = VIEW_PROMPTS.get(sample.get("view", ""), "perspective view")
+    dist = DISTANCE_HINTS.get(sample.get("camera_distance", ""), "medium distance")
+    caption = sample.get("image_caption", "")
+    ctx = f", scene context: {caption[:60]}" if caption else ""
+    pos = (
+        f"Professional BIM render, {view}, {dist}, "
+        f"high-quality 3D building information model, "
+        f"flat matte colors, visible structural elements, "
+        f"Autodesk Revit rendering style, untextured surfaces, "
+        f"technical architectural CAD visualization, "
+        f"concrete and steel structural frame, "
+        f"clean neutral background, sharp edges, "
+        f"architectural blueprint aesthetic, "
+        f"no people, no vegetation, no shadows"
+        f"{ctx}"
     )
-    return positive, negative
+    return pos, _NEG_SDXL
+
+def _prompt_flux(sample):
+    view = VIEW_PROMPTS.get(sample.get("view", ""), "perspective view")
+    dist = DISTANCE_HINTS.get(sample.get("camera_distance", ""), "medium distance")
+    caption = sample.get("image_caption", "")
+    ctx = f" The original scene shows: {caption[:80]}." if caption else ""
+    pos = (
+        f"A professional BIM (Building Information Model) render showing a "
+        f"{view} of a building at {dist}. "
+        f"The image has the appearance of an Autodesk Revit 3D model export "
+        f"with flat matte colors, visible concrete and steel structural "
+        f"elements, clean untextured surfaces, and sharp geometric edges. "
+        f"The background is clean and neutral. "
+        f"There are no people, no vegetation, no realistic textures or shadows. "
+        f"Technical architectural visualization style, "
+        f"similar to a CAD or BIM software screenshot."
+        f"{ctx}"
+    )
+    return pos, ""
+
+_BUILDERS = {"sd15": _prompt_sd15, "sdxl": _prompt_sdxl, "flux": _prompt_flux}
+
+def build_prompt(sample, backend="sdxl"):
+    """Return (positive, negative) prompts for a dataset sample."""
+    return _BUILDERS.get(backend, _prompt_sdxl)(sample)
